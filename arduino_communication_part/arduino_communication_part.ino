@@ -1,8 +1,8 @@
 /*this is the bluetooth communication part of the project 
 using two serial ports to accomodate the hc-05
 Progress report 
-12/1/2020 -serial communication working okay unable to convert incoming string to human readable but is able to 
-compare and do an action based on that
+1: 12/1/2020 -serial communication working okay unable to convert incoming string to human readable but is able to 
+   compare and do an action based on that
 */
 String c = "";
 
