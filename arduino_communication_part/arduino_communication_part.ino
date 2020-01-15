@@ -4,6 +4,7 @@
   1: 12/13/2020 -serial communication working okay unable to convert incoming string to human readable but is able tocompare and do an action based on that
   2: 12/14/2020 -fixed serial communication. readstring solved the problem and now receiving full string with this
   3: 12/14/2020 -created ir sensor handling system which outputs the ir sensor values as a string which can be later compared
+  4: 12/15/2020 - added alot of new things like speed sensor, motor driver, servo, ultrasonic but they are unchecked and uncofirm need to rewire the whole car
 */
 #include "TimerOne.h"
 #include <Servo.h>
