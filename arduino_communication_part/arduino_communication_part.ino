@@ -1,27 +1,31 @@
 /*this is the bluetooth communication part of the project
   using two serial ports to accomodate the hc-05
   Progress report
-  1: 12/13/2020 -serial communication working okay unable to convert incoming string to human readable but is able tocompare and do an action based on that
-  2: 12/14/2020 -fixed serial communication. readstring solved the problem and now receiving full string with this
-  3: 12/14/2020 -created ir sensor handling system which outputs the ir sensor values as a string which can be later compared
-  4: 12/15/2020 - added alot of new things like speed sensor, motor driver, servo, ultrasonic but they are unchecked and uncofirm need to rewire the whole car
+  1: 1/13/2020 -Serial communication working okay unable to convert incoming string to human readable but is able tocompare and do an action based on that
+  2: 1/14/2020 -Fixed serial communication. readstring solved the problem and now receiving full string with this
+  3: 1/14/2020 -Created ir sensor handling system which outputs the ir sensor values as a string which can be later compared
+  4: 1/15/2020 -Added alot of new things like speed sensor, motor driver, servo, ultrasonic but they are unchecked and uncofirm need to rewire the whole car
+  5: 1/20/2020 -Rewired the robot, raised the motor a bit to make way for ir sensors.
+                motors, servo,bluetooth module and sd card now checked and working. robot ready for experimenation 
+  6:1
 */
 #include "TimerOne.h"
 #include <Servo.h>
 Servo servo;
 #define Echo 26  //analog pin 
 #define Trig 27  //analog pin 
-#define ENA 10   //unchecked motor pins. remember to check it 
-#define ENB 11
-#define IN1 24
-#define IN2 25
+#define ENA 6   //unchecked motor pins. remember to check it 
+#define ENB 5
+#define IN1 22
+#define IN2 24
 #define IN3 23
-#define IN4 22
-#define maxCarSpeed 150
+#define IN4 25
+#define maxCarSpeed 100
 #define speedSensorPin 2
-#define servoPin 7
+#define servoPin 8
 #define servoRightPos 10
-#define servoLeftPos 180
+#define servoLeftPos 150
+#define servoCenterPos 85
 int rightDistance, leftDistance, middleDistance;
 volatile unsigned int counter = 0;
 float diskslots = 20.00;
@@ -50,7 +54,6 @@ servo.attach(servoPin);
   pinMode(ENA, OUTPUT);
   pinMode(ENB, OUTPUT);
   Serial.println("program start");
-  stop(); //stop the motor initially
   delay(100);
 
   
