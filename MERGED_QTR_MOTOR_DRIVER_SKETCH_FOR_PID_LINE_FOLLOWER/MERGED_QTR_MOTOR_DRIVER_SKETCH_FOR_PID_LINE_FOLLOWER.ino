@@ -12,7 +12,7 @@
  
 // Line Sensor Properties
 #define NUM_SENSORS             6  // number of sensors used
-#define NUM_SAMPLES_PER_SENSOR  10  // average 4 analog samples per sensor reading
+#define NUM_SAMPLES_PER_SENSOR  20  // average 4 analog samples per sensor reading
 #define EMITTER_PIN             QTR_NO_EMITTER_PIN  // emitter is controlled by digital pin 2
  
 QTRSensorsAnalog qtra((unsigned char[]) {A14, A13, A12, A11, A10, A15}, NUM_SENSORS, NUM_SAMPLES_PER_SENSOR, EMITTER_PIN);
@@ -26,12 +26,13 @@ const double KP = 0.020;
 const double KD = 0.0;
 double lastError = 0;
 const int GOAL = 2500;
-const unsigned char MAX_SPEED = 50;
+const unsigned char MAX_SPEED = 40;
  
  
 void setup() {
   driver.init();
- 
+  Serial.begin(9600);
+  
   // Initialize line sensor array
   calibrateLineSensor();
 }
@@ -39,10 +40,10 @@ void setup() {
 void loop() {
  
   // Get line position
-  unsigned int position = qtra.readLine(sensorValues);
- 
-  // Compute error from line
-  int error = GOAL -  position;
+  unsigned int position = qtra.readLine(sensorValues);  
+  Serial.println(position);
+ /* Compute error from line
+  int error = position - GOAL;
  
   // Compute motor adjustment
   int adjustment = KP*error + KD*(error - lastError);
@@ -53,7 +54,7 @@ void loop() {
   // Adjust motors 
   driver.setMotorAPower(constrain(MAX_SPEED + adjustment, 0, MAX_SPEED));
   driver.setMotorBPower(constrain(MAX_SPEED - adjustment, 0, MAX_SPEED));
- 
+ */
 }
  
 void calibrateLineSensor() {
