@@ -22,11 +22,11 @@ unsigned int sensorValues[NUM_SENSORS];
 L298 driver(24, 22, 6, 25, 23, 5);
  
 // PID Properties
-const double KP = 0.020;
+const double KP = 0.04;
 const double KD = 0.0;
 double lastError = 0;
 const int GOAL = 2500;
-const unsigned char MAX_SPEED = 40;
+const unsigned char MAX_SPEED = 50;
  
  
 void setup() {
@@ -41,10 +41,8 @@ void loop() {
  
   // Get line position
   unsigned int position = qtra.readLine(sensorValues);  
-  Serial.println(position);
- /* Compute error from line
-  int error = position - GOAL;
- 
+
+  int error = GOAL - position;
   // Compute motor adjustment
   int adjustment = KP*error + KD*(error - lastError);
  
@@ -54,14 +52,14 @@ void loop() {
   // Adjust motors 
   driver.setMotorAPower(constrain(MAX_SPEED + adjustment, 0, MAX_SPEED));
   driver.setMotorBPower(constrain(MAX_SPEED - adjustment, 0, MAX_SPEED));
- */
+
 }
  
 void calibrateLineSensor() {
   delay(500);
   pinMode(LED_BUILTIN, OUTPUT);
   digitalWrite(LED_BUILTIN, HIGH);    // turn on Arduino's LED to indicate we are in calibration mode
-  for (int i = 0; i < 200; i++)  // make the calibration take about 10 seconds
+  for (int i = 0; i < 100; i++)  // make the calibration take about 10 seconds
   {
     qtra.calibrate();       // reads all sensors 10 times at 2.5 ms per six sensors (i.e. ~25 ms per call)
   }
