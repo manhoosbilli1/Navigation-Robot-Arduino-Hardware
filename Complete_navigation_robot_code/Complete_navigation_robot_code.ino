@@ -109,7 +109,7 @@ String s;           //stores incoming bluetooth data
 //motor driver properties
 
 L298 driver(24, 22, 6, 25, 23, 5);
-const double KP = 0.04;
+const double KP = 0.04;                 //you should edit this with your experiments....start with same values then increase or decrease as you like
 const double KD = 0.0;
 double lastError = 0;
 const int GOAL = 2500;
@@ -118,7 +118,7 @@ const unsigned char MAX_SPEED = 50;
 
 // option which lets you choose between two functions
 bool typeOfLineFollowing = 0;    //1 for qtr line following
-bool followWall= 1;              //variable for choosing if you want to follow wall or not
+bool followWall = 1;             //variable for choosing if you want to follow wall or not
 void setup() {
   // put your setup code here, to run once:
   driver.init();
@@ -131,42 +131,31 @@ void setup() {
   pinMode(Trig, OUTPUT);
   pinMode(Echo1, INPUT);
   pinMode(Trig1, OUTPUT);
-  if (typeOfLineFollowing == noQtr) {   //0 means without qtr library
-    pinMode(motorLPin1, OUTPUT);
-    pinMode(motorLPin2, OUTPUT);
-    pinMode(motorLEnable, OUTPUT);
-    pinMode(motorRPin1, OUTPUT);
-    pinMode(motorRPin2, OUTPUT);
-    pinMode(motorREnable, OUTPUT);
-    /* Set-up IR sensor pins as input */
-    for (int i = 0; i < 6; i++) {
-      pinMode(irPins[i], INPUT);
-    }
-    TCCR0A = _BV(COM0A1) | _BV(COM0B1) | _BV(WGM01) | _BV(WGM00);
-    TCCR0B = _BV(CS00);
-  } else {}
+  pinMode(motorLPin1, OUTPUT);
+  pinMode(motorLPin2, OUTPUT);
+  pinMode(motorLEnable, OUTPUT);
+  pinMode(motorRPin1, OUTPUT);
+  pinMode(motorRPin2, OUTPUT);
+  pinMode(motorREnable, OUTPUT);
+  /* Set-up IR sensor pins as input */
+  for (int i = 0; i < 6; i++) {
+    pinMode(irPins[i], INPUT);
+  }
+  TCCR0A = _BV(COM0A1) | _BV(COM0B1) | _BV(WGM01) | _BV(WGM00);
+  TCCR0B = _BV(CS00);
 }
 
 void loop() {
-  s = bluetoothHandler();     // catches incoming bluetooth data
-  position = qtra.readLine(sensorValues);   //gets line sensors readin
+  bluetoothHandler();                                // catches incoming bluetooth data and assigns appropriate value to targetchkpoint
+  position = qtra.readLine(sensorValues);            //gets line sensors readin
   checkWallDistance();
   checkFrontDistance();
-  if (distanceFront <= 15) {
-    obstacleDetected = true; //check if obstacle is detected
+  currChkPoint = checkPointCalculator();               //returns value of checkpoints reached
+  if (checkPointCounter == targetCheckPoint) {               //if target reached
+    stop(1);
+    while (1);                                               //stop forever
   }
-  if (!follow_wall) {         //if follow line is not true
-    if (typeOfLineFollowing = 0) {
-      followLineNoQtr();
-    } else {
-      followLineWithQtr();
-    }
-  }
-  if (followWall) {
-    if (obstacleDetected) {
-      avoidObstacle();
-    } else follow_wall();
-  }
+  driveToClass(targetCheckPoint, currChkPoint);        //takes parameter current chk point and target chkpoint..this should work
 }
 
 void followLineWithQtr() {               //pid line following function use this if you are not using the other line following function
@@ -182,7 +171,7 @@ void followLineWithQtr() {               //pid line following function use this 
   driver.setMotorBPower(constrain(MAX_SPEED - adjustment, 0, MAX_SPEED));
 }
 
-void calibrateSensor() {
+void calibrateSensor() {                        //calibrates the sensor
   delay(500);
   pinMode(LED_BUILTIN, OUTPUT);
   digitalWrite(LED_BUILTIN, HIGH);    // turn on Arduino's LED to indicate we are in calibration mode
@@ -193,12 +182,28 @@ void calibrateSensor() {
   digitalWrite(LED_BUILTIN, LOW);     // turn off Arduino's LED to indicate we are through with calibration
 }
 
-String bluetoothHandler() {
+int bluetoothHandler() {
   if (Serial1.available()) {
     s = Serial1.readString();
   }
-  return s;
+  if (s == "go to class 1" || s == "class 1" || s == "class one" || s == "go to class one") {
+    targetCheckPoint = 1;
+  }
+  if (s == "go to class 2" || s == "class two" || s == "go to class two" || s == "go to class 2") {
+    targetCheckPoint = 2;
+  }
+  if (s == "go to class 5" || s == "class five" || s == "go to class five" || s == "go to class five") {
+    targetCheckPoint = 5;
+  }
+  if (s == "Stop" || s == "stop" || s == "STOP") {
+    cmdStop = true;
+  } else {
+    cmdStop = false;
+  }
+  return targetCheckPoint;
 }
+
+//------------------------
 
 void Scan() {
   // Initialize the sensor counter and binary value
@@ -222,7 +227,7 @@ void Scan() {
   }
 }
 
-void UpdateError() {
+int UpdateError() {
 
   errorLast = error;
   Serial.println(irSensors);
@@ -329,6 +334,7 @@ void UpdateError() {
     default:
       error = errorLast;
   }
+  return lap;
 }
 
 void UpdateCorrection() {
@@ -455,14 +461,16 @@ void Drive() {
   }
 }
 
-void followLineNoQtr() {
+//---------------------
+
+void followLineNoQtr() {                     //line following algorithm without using qtr library...
   Scan();
   UpdateError();
   UpdateCorrection();
   Drive();
 }
 
-void follow_wall() {     //pid controller for following wall
+void follow_wall() {                           //pid controller for following wall
   int errorW = distanceWall - GOALW;
   // Compute motor adjustment
   int adjustmentW = KPW * errorW + KDW * (errorW - lastErrorW);
@@ -473,8 +481,8 @@ void follow_wall() {     //pid controller for following wall
   driver.setMotorAPower(constrain(MAX_SPEED + adjustmentW, 0, MAX_SPEED));
   driver.setMotorBPower(constrain(MAX_SPEED - adjustmentW, 0, MAX_SPEED));
 }
-
-int distance_test() {
+ 
+int distance_test() {                           //returns ultrasonic distance
   digitalWrite(Trig, LOW);
   delayMicroseconds(2);
   digitalWrite(Trig, HIGH);
@@ -485,7 +493,7 @@ int distance_test() {
   return (int)Fdistance;
 }
 
-int distance_test1() {
+int distance_test1() {                           //returns ultrasonic distance
   digitalWrite(Trig1, LOW);
   delayMicroseconds(2);
   digitalWrite(Trig1, HIGH);
@@ -496,7 +504,7 @@ int distance_test1() {
   return (int)Fdistance;
 }
 
-void turn(bool dir, int turnDelay) {
+void turn(bool dir, int turnDelay) {              //type direction and for how long...only takes 'right' or 'left'
   if (dir == right) {
     driver.setMotorAPower(-100);
     driver.setMotorBPower(100);
@@ -508,13 +516,13 @@ void turn(bool dir, int turnDelay) {
   }
 }
 
-void stop(int Delay) {
+void stop(int Delay) {               //type in a value like 500 and the motor will stop for that amount of time
   driver.setMotorAPower(0);
   driver.setMotorBPower(0);
   delay(Delay);
 }
 
-void forward(int power, int Delay) {
+void forward(int power, int Delay) {       //type in with how much speed do you want to travel forward
   driver.setMotorAPower(power);
   driver.setMotorBPower(power);
   delay(Delay);
@@ -529,16 +537,16 @@ void checkFrontDistance() {
 }
 
 void checkRightDistance() {
-  if(servo.read() != 10){
-  servo.write(10);     // move the servo to right position
-  delay(1000);
+  if (servo.read() != 10) {
+    servo.write(10);     // move the servo to right position
+    delay(1000);
   }
   distanceRight = distance_test1();
 }
 
-void checkWallDistance() {       
+void checkWallDistance() {
   distanceWall = distance_test();
-}   
+}
 
 void avoidObstacle() {           //main obstacle avoidance function
   if (obstacleDetected) {
@@ -555,7 +563,7 @@ void avoidObstacle() {           //main obstacle avoidance function
       trulyObstacle = false;
       obstacleDetected = false;
     }
-    if (trulyObstacle) {
+    if (trulyObstacle && obstacleDetected) {
       Serial.println("Truly obstacle");
       turn(left, 350);
       stop(500);
@@ -569,5 +577,31 @@ void avoidObstacle() {           //main obstacle avoidance function
       obstacleDetected = false;
       trulyObstacle = false;
     }
+  }
+}
+
+void checkPointCalculator() {                         //turn this function on if you want to count checkpoints
+  scan();
+  UpdateError();                                      //constantly looks out if a checkpoint in reached...return amount of laps done
+  if (checkPointCounter == maxCheckPoints) {
+    lap = 0;
+  }
+}
+
+
+void driveToClass(int targetCheckPoint, int currChkPoint) {}
+while (currChkPoint != targetCheckPoint) {
+  bluetoothHandler();
+  checkWallDistance();
+  checkFrontDistance();
+  currChkPoint = checkPointCalculator;
+  if (obstacleDetected) {
+    avoidObstacle();
+  } else {
+    follow_wall();
+  }
+  if (cmdStop) {
+    stop(1);
+    while (1);
   }
 }
